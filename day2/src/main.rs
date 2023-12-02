@@ -14,7 +14,7 @@ fn part1() -> u64 {
 
     let mut sum = 0;
     for line in lines {
-        let game = parse_game(&line.unwrap());
+        let game = Game::from_str(&line.unwrap());
         if game.max.red > bag.red || game.max.green > bag.green || game.max.blue > bag.blue {
             continue;
         }
@@ -30,14 +30,14 @@ fn part2() -> u64 {
 
     let mut sum = 0;
     for line in lines {
-        let game = parse_game(&line.unwrap());
+        let game = Game::from_str(&line.unwrap());
         sum += game.max.red * game.max.green * game.max.blue;
     }
 
     sum
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 struct Cubes {
     red: u64,
     green: u64,
@@ -45,12 +45,19 @@ struct Cubes {
 }
 
 impl Cubes {
-    fn new() -> Self {
-        Self {
-            red: 0,
-            green: 0,
-            blue: 0,
+    fn from_str(input: &str) -> Self {
+        let mut cubes: Self = Default::default();
+        let parts = input.trim().split(',');
+        for part in parts {
+            let (quantity, color) = part.trim().split_once(' ').unwrap();
+            match color {
+                "red" => cubes.red += quantity.parse::<u64>().unwrap(),
+                "green" => cubes.green += quantity.parse::<u64>().unwrap(),
+                "blue" => cubes.blue += quantity.parse::<u64>().unwrap(),
+                _ => continue,
+            }
         }
+        cubes
     }
 }
 
@@ -61,33 +68,25 @@ struct Game {
     max: Cubes,
 }
 
-fn parse_game(line: &str) -> Game {
-    let (header, movelist) = line.split_once(':').unwrap();
-    let (_, game_id) = header.split_once(' ').unwrap();
-    let mut game = Game {
-        id: game_id.parse().unwrap(),
-        moves: Vec::new(),
-        max: Cubes::new(),
-    };
-    let moves = movelist.split(';');
-    for mov in moves {
-        let mut cubes = Cubes::new();
-        let moveparts = mov.trim().split(',');
-        for part in moveparts {
-            let (quantity, color) = part.trim().split_once(' ').unwrap();
-            match color {
-                "red" => cubes.red += quantity.parse::<u64>().unwrap(),
-                "green" => cubes.green += quantity.parse::<u64>().unwrap(),
-                "blue" => cubes.blue += quantity.parse::<u64>().unwrap(),
-                _ => continue,
-            }
+impl Game {
+    fn from_str(input: &str) -> Self {
+        let (header, movelist) = input.split_once(':').unwrap();
+        let (_, game_id) = header.split_once(' ').unwrap();
+        let mut game = Game {
+            id: game_id.parse().unwrap(),
+            moves: Vec::new(),
+            max: Default::default(),
+        };
+        let moves = movelist.split(';');
+        for mov in moves {
+            let cubes = Cubes::from_str(&mov);
+            game.max.red = cmp::max(game.max.red, cubes.red);
+            game.max.green = cmp::max(game.max.green, cubes.green);
+            game.max.blue = cmp::max(game.max.blue, cubes.blue);
+            game.moves.push(cubes);
         }
-        game.max.red = cmp::max(game.max.red, cubes.red);
-        game.max.green = cmp::max(game.max.green, cubes.green);
-        game.max.blue = cmp::max(game.max.blue, cubes.blue);
-        game.moves.push(cubes);
+        game
     }
-    game
 }
 
 fn main() {
