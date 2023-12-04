@@ -27,44 +27,28 @@ fn part2() -> usize {
     let file = File::open("./input.txt").unwrap();
     let lines = io::BufReader::new(file).lines();
 
-    let mut pile: Vec<Card> = Vec::new();
+    let mut multipliers: Vec<usize> = vec![1];
     for line in lines {
         let card = Card::from_str(&line.unwrap());
-        pile.push(card);
-    }
-
-    let mut i = 0;
-    loop {
-        if i >= pile.len() {
-            break;
-        };
-
-        let card = &pile[i].clone();
         let mut score: usize = 0;
         for num in &card.numbers {
             if card.winning.iter().any(|n| *n == *num) {
                 score += 1;
             }
         }
-
-        for offset in 1..=score {
-            let to_insert = pile
-                .iter()
-                .find(|other_card| other_card.id == card.id + offset);
-            if let Some(new_card) = to_insert {
-                pile.push(new_card.clone());
-            } else {
-                println!("Card not found {}", card.id + offset)
+        for offset in 0..score {
+            let i = card.id + offset;
+            if i >= multipliers.len() {
+                multipliers.resize(i + 1, 1);
             }
+            multipliers[i] += multipliers[card.id - 1];
         }
-
-        i += 1;
     }
 
-    pile.len()
+    multipliers.iter().sum()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Card {
     id: usize,
     winning: Vec<usize>,
